@@ -29,10 +29,37 @@ describe('App', () => {
     })
 
     window.dispatchEvent(beforeInstallEvent)
+    await waitFor(() =>
+      expect(screen.getByText(/install is ready: click "install app"/i)).toBeInTheDocument(),
+    )
     fireEvent.click(screen.getByRole('button', { name: /install app/i }))
 
     await waitFor(() => expect(prompt).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.getByText(/app install accepted/i)).toBeInTheDocument())
+  })
+
+  it('can handle install prompt dismiss flow', async () => {
+    render(<App />)
+    const prompt = vi.fn(async () => {})
+    const beforeInstallEvent = Object.assign(new Event('beforeinstallprompt'), {
+      preventDefault: vi.fn(),
+      prompt,
+      userChoice: Promise.resolve({ outcome: 'dismissed' }),
+    })
+
+    window.dispatchEvent(beforeInstallEvent)
+    await waitFor(() =>
+      expect(screen.getByText(/install is ready: click "install app"/i)).toBeInTheDocument(),
+    )
+    fireEvent.click(screen.getByRole('button', { name: /install app/i }))
+
+    await waitFor(() => expect(prompt).toHaveBeenCalledTimes(1))
+    await waitFor(
+      () =>
+        expect(
+          screen.getByText(/install dismissed\. you can continue using it in-browser\./i),
+        ).toBeInTheDocument(),
+    )
   })
 
   it('sends a message and renders received response', () => {
