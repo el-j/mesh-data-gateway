@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../src/App'
@@ -37,7 +37,7 @@ describe('App', () => {
 
   it('navigates to docs, about and impressum pages from top nav', async () => {
     renderAt('/')
-    fireEvent.click(screen.getByRole('link', { name: /docs/i }))
+    fireEvent.click(within(screen.getByRole('navigation', { name: /primary/i })).getByRole('link', { name: /docs/i }))
     await waitFor(() => expect(screen.getByRole('heading', { name: /mdg monorepo documentation/i })).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('link', { name: /about/i }))
