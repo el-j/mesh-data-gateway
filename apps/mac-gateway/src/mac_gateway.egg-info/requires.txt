@@ -1,3 +1,0 @@
-meshtastic
-pysmaz
-requests

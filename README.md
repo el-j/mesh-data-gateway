@@ -122,6 +122,14 @@ The web client now serves as a polished landing page and live MDG console in one
 - Use directly in-browser (no install required).
 - Install as a PWA when the browser exposes install support.
 - Includes manifest, service worker, and app icons in `apps/web-client/public/`.
+- Choose transport mode in the console:
+  - **Demo Loopback**: local test mode with no hardware.
+  - **Serial LoRa Board**: click **Connect LoRa Board** to pick a serial device in a Chromium-based desktop browser.
+
+### Hardware Connection Notes
+
+- Current browser hardware mode expects an MDG serial framing bridge (length-prefixed packet stream) on the selected serial port.
+- Direct stock Meshtastic protobuf transport is not implemented yet; tracked in `apps/web-client/CONNECTIVITY_TODO.md`.
 
 ## CI/CD Workflows
 

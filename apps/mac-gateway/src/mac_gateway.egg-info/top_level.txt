@@ -1,5 +1,0 @@
-integrations
-main
-protocol
-radio
-router

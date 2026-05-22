@@ -72,6 +72,12 @@ body {
   gap: 0.6rem;
 }
 
+.transport-controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 label {
   font-size: 0.9rem;
   color: #cbd5e1;
@@ -98,6 +104,11 @@ button {
   background: linear-gradient(90deg, #2563eb, #0ea5e9);
   border: none;
   font-weight: 600;
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 ul {

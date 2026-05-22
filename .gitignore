@@ -2,10 +2,13 @@
 __pycache__/
 *.pyc
 .venv/
+.coverage
+*.egg-info/
 
 # Node
 node_modules/
 dist/
+coverage/
 
 # Env
 .env

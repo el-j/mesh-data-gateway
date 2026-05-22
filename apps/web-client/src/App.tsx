@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { ProtocolCodec, ReassemblyBuffer, RouteId } from './lib/protocol'
-import { LoopbackTransport } from './meshtastic/transport'
+import { getWebSerialApi, LoopbackTransport, MeshTransport, SerialTransport } from './meshtastic/transport'
 import './App.css'
 
 const labels: Record<number, string> = {
@@ -28,17 +28,26 @@ export default function App() {
   const codec = useMemo(() => new ProtocolCodec(), [])
   const txBuffer = useMemo(() => new ReassemblyBuffer(codec), [codec])
   const rxBuffer = useMemo(() => new ReassemblyBuffer(codec), [codec])
-  const transport = useMemo(() => new LoopbackTransport(), [])
+  const loopbackTransport = useMemo(() => new LoopbackTransport(), [])
+  const serialTransport = useMemo(() => new SerialTransport(), [])
+  const serialSupported = useMemo(() => Boolean(getWebSerialApi()), [])
 
   const [routeId, setRouteId] = useState<number>(RouteId.HumanChat)
+  const [transportMode, setTransportMode] = useState<'loopback' | 'serial'>('loopback')
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<AppMessage[]>([])
   const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null)
   const [installStatus, setInstallStatus] = useState('')
+  const [connected, setConnected] = useState(true)
+  const [transportStatus, setTransportStatus] = useState(
+    'Demo loopback connected. Switch to "Serial LoRa Board" and connect your device for hardware transport.',
+  )
+
+  const activeTransport: MeshTransport =
+    transportMode === 'serial' ? serialTransport : loopbackTransport
 
   useEffect(() => {
-    void transport.connect()
-    transport.subscribe((packet) => {
+    const unsubscribe = activeTransport.subscribe((packet) => {
       const incoming = txBuffer.addPacket(packet)
       if (!incoming) return
 
@@ -52,7 +61,43 @@ export default function App() {
           }
         })
     })
-  }, [codec, rxBuffer, transport, txBuffer])
+    return unsubscribe
+  }, [activeTransport, codec, rxBuffer, txBuffer])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const refreshTransport = async () => {
+      await loopbackTransport.disconnect()
+      await serialTransport.disconnect()
+
+      if (transportMode === 'loopback') {
+        await loopbackTransport.connect()
+        if (!cancelled) {
+          setConnected(true)
+          setTransportStatus(
+            'Demo loopback connected. Switch to "Serial LoRa Board" and connect your device for hardware transport.',
+          )
+        }
+        return
+      }
+
+      if (!cancelled) {
+        setConnected(false)
+        setTransportStatus(
+          serialSupported
+            ? 'Serial mode selected. Click "Connect LoRa Board" to choose and connect your board.'
+            : 'Web Serial is not supported in this browser. Use Chromium-based desktop browser.',
+        )
+      }
+    }
+
+    void refreshTransport()
+
+    return () => {
+      cancelled = true
+    }
+  }, [loopbackTransport, serialSupported, serialTransport, transportMode])
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
@@ -71,13 +116,42 @@ export default function App() {
     if (!message.trim()) {
       return
     }
+    if (transportMode === 'serial' && !activeTransport.isConnected()) {
+      setTransportStatus('Connect a transport before sending messages.')
+      return
+    }
 
     const msgId = Math.floor(Math.random() * 256)
     const chunks = codec.encodeChunks(routeId, message, msgId)
     for (const chunk of chunks) {
-      await transport.send(chunk)
+      await activeTransport.send(chunk)
     }
     setMessage('')
+  }
+
+  const connectBoard = async () => {
+    if (!serialSupported) {
+      setTransportStatus('Web Serial is not supported in this browser.')
+      return
+    }
+
+    try {
+      await serialTransport.connect()
+      setConnected(true)
+      setTransportStatus(
+        'Serial LoRa board connected. You can now send messages through the selected hardware transport.',
+      )
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Unknown serial connection error.'
+      setConnected(false)
+      setTransportStatus(`Could not connect serial board: ${reason}`)
+    }
+  }
+
+  const disconnectBoard = async () => {
+    await serialTransport.disconnect()
+    setConnected(false)
+    setTransportStatus('Serial LoRa board disconnected.')
   }
 
   const installApp = async () => {
@@ -129,6 +203,31 @@ export default function App() {
 
       <section className="console">
         <h2>Live Message Console</h2>
+
+        <label htmlFor="transport-mode">Transport</label>
+        <select
+          id="transport-mode"
+          value={transportMode}
+          onChange={(event) => {
+            const nextMode = event.target.value as 'loopback' | 'serial'
+            setTransportMode(nextMode)
+            setConnected(nextMode === 'loopback')
+          }}
+        >
+          <option value="loopback">Demo Loopback (no hardware)</option>
+          <option value="serial">Serial LoRa Board</option>
+        </select>
+        {transportMode === 'serial' ? (
+          <div className="transport-controls">
+            <button type="button" onClick={() => void connectBoard()} disabled={connected}>
+              Connect LoRa Board
+            </button>
+            <button type="button" onClick={() => void disconnectBoard()} disabled={!connected}>
+              Disconnect
+            </button>
+          </div>
+        ) : null}
+        <p role="status">{transportStatus}</p>
 
         <label htmlFor="target-service">Target Service</label>
         <select
