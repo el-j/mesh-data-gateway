@@ -1,0 +1,74 @@
+{
+  "version": "2.0",
+  "maxPacketSize": 200,
+  "headerSize": 4,
+  "routes": {
+    "0x01": "Human Chat",
+    "0x02": "MCP Request",
+    "0x03": "Telegram",
+    "0x04": "IoT Control"
+  },
+  "examples": [
+    {
+      "name": "single-chunk-chat",
+      "routeId": "0x01",
+      "messageId": "0x4A",
+      "chunkIndex": 1,
+      "totalChunks": 1,
+      "headerHex": "014A0101",
+      "payloadHex": "534D415A5F434F4D505245535345445F434841545F4558414D504C45"
+    },
+    {
+      "name": "single-chunk-mcp",
+      "routeId": "0x02",
+      "messageId": "0x4B",
+      "chunkIndex": 1,
+      "totalChunks": 1,
+      "headerHex": "024B0101",
+      "payloadHex": "534D415A5F434F4D505245535345445F4D43505F4A534F4E"
+    },
+    {
+      "name": "single-chunk-telegram",
+      "routeId": "0x03",
+      "messageId": "0x4C",
+      "chunkIndex": 1,
+      "totalChunks": 1,
+      "headerHex": "034C0101",
+      "payloadHex": "534D415A5F434F4D505245535345445F54454C454752414D"
+    },
+    {
+      "name": "single-chunk-iot",
+      "routeId": "0x04",
+      "messageId": "0x4D",
+      "chunkIndex": 1,
+      "totalChunks": 1,
+      "headerHex": "044D0101",
+      "payloadHex": "534D415A5F434F4D505245535345445F494F545F434F4D4D414E44"
+    },
+    {
+      "name": "multi-chunk-mcp-request",
+      "routeId": "0x02",
+      "messageId": "0x7F",
+      "chunks": [
+        {
+          "chunkIndex": 1,
+          "totalChunks": 3,
+          "headerHex": "027F0103",
+          "payloadHex": "534D415A5F50415254315F2E2E2E"
+        },
+        {
+          "chunkIndex": 2,
+          "totalChunks": 3,
+          "headerHex": "027F0203",
+          "payloadHex": "534D415A5F50415254325F2E2E2E"
+        },
+        {
+          "chunkIndex": 3,
+          "totalChunks": 3,
+          "headerHex": "027F0303",
+          "payloadHex": "534D415A5F50415254335F2E2E2E"
+        }
+      ]
+    }
+  ]
+}
