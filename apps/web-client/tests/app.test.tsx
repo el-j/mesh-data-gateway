@@ -85,11 +85,16 @@ describe('App', () => {
     expect(screen.getByText(/connect a transport before sending messages/i)).toBeInTheDocument()
   })
 
-  it('shows unsupported serial message when connect is clicked', () => {
+  it('shows unsupported serial message when connect is clicked', async () => {
     render(<App />)
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
+    await waitFor(() =>
+      expect(
+        screen.getByText(/web serial is not supported in this browser\. use chromium-based desktop browser\./i),
+      ).toBeInTheDocument(),
+    )
     fireEvent.click(screen.getByRole('button', { name: /Connect LoRa Board/i }))
-    expect(screen.getByText(/web serial is not supported in this browser/i)).toBeInTheDocument()
+    expect(screen.getByText(/^web serial is not supported in this browser\.$/i)).toBeInTheDocument()
   })
 
   it('connects and disconnects serial board when web serial is available', async () => {
@@ -107,6 +112,9 @@ describe('App', () => {
 
     render(<App />)
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
+    await waitFor(() =>
+      expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
+    )
     fireEvent.click(screen.getByRole('button', { name: /Connect LoRa Board/i }))
 
     await waitFor(() =>
@@ -124,13 +132,16 @@ describe('App', () => {
       configurable: true,
       value: {
         requestPort: vi.fn(async () => {
-          throw 'boom'
+          throw { failure: 'boom' }
         }),
       },
     })
 
     render(<App />)
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
+    await waitFor(() =>
+      expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
+    )
     fireEvent.click(screen.getByRole('button', { name: /Connect LoRa Board/i }))
     await waitFor(() =>
       expect(screen.getByText(/could not connect serial board: unknown serial connection error/i)).toBeInTheDocument(),
@@ -149,6 +160,9 @@ describe('App', () => {
 
     render(<App />)
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
+    await waitFor(() =>
+      expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
+    )
     fireEvent.click(screen.getByRole('button', { name: /Connect LoRa Board/i }))
     await waitFor(() =>
       expect(screen.getByText(/could not connect serial board: permission denied/i)).toBeInTheDocument(),

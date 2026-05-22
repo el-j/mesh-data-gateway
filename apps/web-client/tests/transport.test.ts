@@ -12,7 +12,7 @@ type MockSerialPort = {
 const createMockSerialContext = (chunks: Uint8Array[]) => {
   const writes: Uint8Array[] = []
   const openCalls: number[] = []
-  const closeCalls: number[] = []
+  let closeCallCount = 0
 
   const readable = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -32,7 +32,7 @@ const createMockSerialContext = (chunks: Uint8Array[]) => {
       openCalls.push(baudRate)
     },
     close: async () => {
-      closeCalls.push(1)
+      closeCallCount += 1
     },
     readable,
     writable,
@@ -41,7 +41,7 @@ const createMockSerialContext = (chunks: Uint8Array[]) => {
   return {
     writes,
     openCalls,
-    closeCalls,
+    getCloseCallCount: () => closeCallCount,
     serialApi: {
       requestPort: async () => port,
     },
@@ -93,7 +93,7 @@ describe('SerialTransport', () => {
 
     expect(transport.isConnected()).toBe(false)
     expect(context.openCalls).toEqual([115200])
-    expect(context.closeCalls).toEqual([1])
+    expect(context.getCloseCallCount()).toBe(1)
     expect(context.writes).toEqual([new Uint8Array([2, 4, 5])])
     expect(received).toEqual([9, 8, 7])
   })

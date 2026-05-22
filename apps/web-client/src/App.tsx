@@ -142,7 +142,7 @@ export default function App() {
         'Serial LoRa board connected. You can now send messages through the selected hardware transport.',
       )
     } catch (error) {
-      const reason = error instanceof Error ? error.message : 'Unknown serial connection error.'
+      const reason = error instanceof Error ? error.message : 'Unknown serial connection error'
       setConnected(false)
       setTransportStatus(`Could not connect serial board: ${reason}`)
     }
@@ -211,7 +211,6 @@ export default function App() {
           onChange={(event) => {
             const nextMode = event.target.value as 'loopback' | 'serial'
             setTransportMode(nextMode)
-            setConnected(nextMode === 'loopback')
           }}
         >
           <option value="loopback">Demo Loopback (no hardware)</option>
