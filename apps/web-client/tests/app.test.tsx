@@ -3,28 +3,69 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import App from '../src/App'
 
+const basePath = import.meta.env.BASE_URL.endsWith('/')
+  ? import.meta.env.BASE_URL.slice(0, -1)
+  : import.meta.env.BASE_URL
+
+const renderAt = (path: string) => {
+  window.history.pushState({}, '', `${basePath}${path}`)
+  render(<App />)
+}
+
+const goToLiveApp = async () => {
+  fireEvent.click(screen.getByRole('link', { name: /open live app/i }))
+  await waitFor(() => expect(screen.getByRole('heading', { name: /live mesh console/i })).toBeInTheDocument())
+}
+
 describe('App', () => {
   afterEach(() => {
     cleanup()
+    window.history.pushState({}, '', `${basePath}/`)
     Reflect.deleteProperty(window.navigator, 'serial')
   })
 
-  it('renders landing page hero and install call-to-action', () => {
-    render(<App />)
+  it('renders hero landing content and GitHub link', () => {
+    renderAt('/')
     expect(screen.getByRole('heading', { name: /mesh data gateway/i })).toBeInTheDocument()
-    expect(screen.getByText(/run mdg in your browser/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /install app/i })).toBeInTheDocument()
-    expect(screen.getByLabelText(/Transport/i)).toBeInTheDocument()
+    expect(screen.getByText(/payload-agnostic routed tunnel/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /view on github/i })).toHaveAttribute(
+      'href',
+      'https://github.com/el-j/mesh-data-gateway',
+    )
   })
 
-  it('shows install fallback message when prompt is unavailable', () => {
-    render(<App />)
+  it('navigates to about and impressum pages from top nav', async () => {
+    renderAt('/')
+    fireEvent.click(screen.getByRole('link', { name: /about/i }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: /about mesh data gateway/i })).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('link', { name: /impressum/i }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: /impressum/i })).toBeInTheDocument())
+  })
+
+  it('supports direct app and about routes', () => {
+    renderAt('/app')
+    expect(screen.getByRole('heading', { name: /live mesh console/i })).toBeInTheDocument()
+    cleanup()
+
+    renderAt('/about')
+    expect(screen.getByRole('heading', { name: /about mesh data gateway/i })).toBeInTheDocument()
+  })
+
+  it('redirects unknown routes to home', async () => {
+    renderAt('/unknown')
+    await waitFor(() => expect(screen.getByRole('heading', { name: /mesh data gateway/i })).toBeInTheDocument())
+  })
+
+  it('shows install fallback message when prompt is unavailable', async () => {
+    renderAt('/')
+    await goToLiveApp()
     fireEvent.click(screen.getByRole('button', { name: /install app/i }))
     expect(screen.getByText(/install prompt is not available yet/i)).toBeInTheDocument()
   })
 
   it('can handle install prompt accept flow', async () => {
-    render(<App />)
+    renderAt('/app')
     const prompt = vi.fn(async () => {})
     const beforeInstallEvent = Object.assign(new Event('beforeinstallprompt'), {
       preventDefault: vi.fn(),
@@ -43,7 +84,7 @@ describe('App', () => {
   })
 
   it('can handle install prompt dismiss flow', async () => {
-    render(<App />)
+    renderAt('/app')
     const prompt = vi.fn(async () => {})
     const beforeInstallEvent = Object.assign(new Event('beforeinstallprompt'), {
       preventDefault: vi.fn(),
@@ -67,7 +108,7 @@ describe('App', () => {
   })
 
   it('sends a message and renders received response', async () => {
-    render(<App />)
+    renderAt('/app')
     await waitFor(() => expect(screen.getByText(/demo loopback connected/i)).toBeInTheDocument())
 
     fireEvent.change(screen.getByLabelText(/Target Service/i), { target: { value: '2' } })
@@ -77,16 +118,18 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText(/MCP RESPONSE/i)).toBeInTheDocument())
   })
 
-  it('blocks sending when serial mode is selected but board is not connected', () => {
-    render(<App />)
+  it('blocks sending when serial mode is selected but board is not connected', async () => {
+    renderAt('/app')
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
     fireEvent.change(screen.getByLabelText(/Message/i), { target: { value: 'needs board' } })
     fireEvent.click(screen.getByRole('button', { name: /Send/i }))
-    expect(screen.getByText(/connect a transport before sending messages/i)).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.getByText(/connect a transport before sending messages/i)).toBeInTheDocument(),
+    )
   })
 
   it('shows unsupported serial message when connect is clicked', async () => {
-    render(<App />)
+    renderAt('/app')
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
     await waitFor(() =>
       expect(
@@ -110,7 +153,7 @@ describe('App', () => {
       },
     })
 
-    render(<App />)
+    renderAt('/app')
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
     await waitFor(() =>
       expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
@@ -137,7 +180,7 @@ describe('App', () => {
       },
     })
 
-    render(<App />)
+    renderAt('/app')
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
     await waitFor(() =>
       expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
@@ -158,7 +201,7 @@ describe('App', () => {
       },
     })
 
-    render(<App />)
+    renderAt('/app')
     fireEvent.change(screen.getByLabelText(/Transport/i), { target: { value: 'serial' } })
     await waitFor(() =>
       expect(screen.getByText(/serial mode selected\. click "connect lora board"/i)).toBeInTheDocument(),
@@ -170,13 +213,13 @@ describe('App', () => {
   })
 
   it('does not send empty message', () => {
-    render(<App />)
+    renderAt('/app')
     fireEvent.click(screen.getByRole('button', { name: /Send/i }))
     expect(screen.getByText(/Messages/)).toBeInTheDocument()
   })
 
   it('handles multi-chunk send flow', async () => {
-    render(<App />)
+    renderAt('/app')
     await waitFor(() => expect(screen.getByText(/demo loopback connected/i)).toBeInTheDocument())
     fireEvent.change(screen.getByLabelText(/Target Service/i), { target: { value: '1' } })
     fireEvent.change(screen.getByLabelText(/Message/i), { target: { value: 'x'.repeat(220) } })

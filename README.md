@@ -122,6 +122,11 @@ The web client now serves as a polished landing page and live MDG console in one
 - Use directly in-browser (no install required).
 - Install as a PWA when the browser exposes install support.
 - Includes manifest, service worker, and app icons in `apps/web-client/public/`.
+- Includes route-based sections:
+  - `/` Open-source hero landing page
+  - `/app` Live MDG console
+  - `/about` Project background
+  - `/impressum` Legal/project transparency info
 - Choose transport mode in the console:
   - **Demo Loopback**: local test mode with no hardware.
   - **Serial LoRa Board**: click **Connect LoRa Board** to pick a serial device in a Chromium-based desktop browser.
