@@ -130,10 +130,13 @@ The web client now serves as a polished landing page and live MDG console in one
 - Choose transport mode in the console:
   - **Demo Loopback**: local test mode with no hardware.
   - **Serial LoRa Board**: click **Connect LoRa Board** to pick a serial device in a Chromium-based desktop browser.
+  - **Bluetooth LoRa Board**: click **Connect LoRa Board** to pair over Web Bluetooth (works well on Android Chrome).
 
 ### Hardware Connection Notes
 
-- Current browser hardware mode expects an MDG serial framing bridge (length-prefixed packet stream) on the selected serial port.
+- Current browser hardware modes expect an MDG length-prefixed packet framing bridge:
+  - Serial mode: framing over Web Serial.
+  - Bluetooth mode: framing over Nordic UART Service (NUS) Web Bluetooth characteristics.
 - Direct stock Meshtastic protobuf transport is not implemented yet; tracked in `apps/web-client/CONNECTIVITY_TODO.md`.
 
 ## CI/CD Workflows

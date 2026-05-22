@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Link, Navigate, Route, Routes } from 'react-router-dom'
 
 import { ProtocolCodec, ReassemblyBuffer, RouteId } from './lib/protocol'
-import { getWebSerialApi, LoopbackTransport, MeshTransport, SerialTransport } from './meshtastic/transport'
+import {
+  BluetoothTransport,
+  getWebBluetoothApi,
+  getWebSerialApi,
+  LoopbackTransport,
+  MeshTransport,
+  SerialTransport,
+} from './meshtastic/transport'
 import './App.css'
 
 const labels: Record<number, string> = {
@@ -106,10 +113,12 @@ function LiveAppPage() {
   const rxBuffer = useMemo(() => new ReassemblyBuffer(codec), [codec])
   const loopbackTransport = useMemo(() => new LoopbackTransport(), [])
   const serialTransport = useMemo(() => new SerialTransport(), [])
+  const bluetoothTransport = useMemo(() => new BluetoothTransport(), [])
   const serialSupported = useMemo(() => Boolean(getWebSerialApi()), [])
+  const bluetoothSupported = useMemo(() => Boolean(getWebBluetoothApi()), [])
 
   const [routeId, setRouteId] = useState<number>(RouteId.HumanChat)
-  const [transportMode, setTransportMode] = useState<'loopback' | 'serial'>('loopback')
+  const [transportMode, setTransportMode] = useState<'loopback' | 'serial' | 'bluetooth'>('loopback')
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<AppMessage[]>([])
   const [installPrompt, setInstallPrompt] = useState<DeferredInstallPrompt | null>(null)
@@ -119,7 +128,12 @@ function LiveAppPage() {
     'Demo loopback connected. Switch to "Serial LoRa Board" and connect your device for hardware transport.',
   )
 
-  const activeTransport: MeshTransport = transportMode === 'serial' ? serialTransport : loopbackTransport
+  const activeTransport: MeshTransport =
+    transportMode === 'serial'
+      ? serialTransport
+      : transportMode === 'bluetooth'
+        ? bluetoothTransport
+        : loopbackTransport
 
   useEffect(() => {
     const unsubscribe = activeTransport.subscribe((packet) => {
@@ -145,6 +159,7 @@ function LiveAppPage() {
     const refreshTransport = async () => {
       await loopbackTransport.disconnect()
       await serialTransport.disconnect()
+      await bluetoothTransport.disconnect()
 
       if (transportMode === 'loopback') {
         await loopbackTransport.connect()
@@ -160,9 +175,13 @@ function LiveAppPage() {
       if (!cancelled) {
         setConnected(false)
         setTransportStatus(
-          serialSupported
-            ? 'Serial mode selected. Click "Connect LoRa Board" to choose and connect your board.'
-            : 'Web Serial is not supported in this browser. Use Chromium-based desktop browser.',
+          transportMode === 'serial'
+            ? serialSupported
+              ? 'Serial mode selected. Click "Connect LoRa Board" to choose and connect your board.'
+              : 'Web Serial is not supported in this browser. Use Chromium-based desktop browser.'
+            : bluetoothSupported
+              ? 'Bluetooth mode selected. Click "Connect LoRa Board" to pair your board (works well on Android).'
+              : 'Web Bluetooth is not supported in this browser. Use a compatible browser/device.',
         )
       }
     }
@@ -171,7 +190,7 @@ function LiveAppPage() {
     return () => {
       cancelled = true
     }
-  }, [loopbackTransport, serialSupported, serialTransport, transportMode])
+  }, [bluetoothSupported, bluetoothTransport, loopbackTransport, serialSupported, serialTransport, transportMode])
 
   useEffect(() => {
     const onBeforeInstallPrompt = (event: Event) => {
@@ -190,7 +209,7 @@ function LiveAppPage() {
     if (!message.trim()) {
       return
     }
-    if (transportMode === 'serial' && !activeTransport.isConnected()) {
+    if ((transportMode === 'serial' || transportMode === 'bluetooth') && !activeTransport.isConnected()) {
       setTransportStatus('Connect a transport before sending messages.')
       return
     }
@@ -204,28 +223,53 @@ function LiveAppPage() {
   }
 
   const connectBoard = async () => {
-    if (!serialSupported) {
+    if (transportMode === 'serial' && !serialSupported) {
       setTransportStatus('Web Serial is not supported in this browser.')
+      return
+    }
+    if (transportMode === 'bluetooth' && !bluetoothSupported) {
+      setTransportStatus('Web Bluetooth is not supported in this browser.')
       return
     }
 
     try {
-      await serialTransport.connect()
+      if (transportMode === 'serial') {
+        await serialTransport.connect()
+      } else {
+        await bluetoothTransport.connect()
+      }
       setConnected(true)
       setTransportStatus(
-        'Serial LoRa board connected. You can now send messages through the selected hardware transport.',
+        transportMode === 'serial'
+          ? 'Serial LoRa board connected. You can now send messages through the selected hardware transport.'
+          : 'Bluetooth LoRa board connected. You can now send messages through the selected hardware transport.',
       )
     } catch (error) {
-      const reason = error instanceof Error ? error.message : 'Unknown serial connection error'
+      const reason =
+        error instanceof Error
+          ? error.message
+          : transportMode === 'bluetooth'
+            ? 'Unknown Bluetooth connection error'
+            : 'Unknown serial connection error'
       setConnected(false)
-      setTransportStatus(`Could not connect serial board: ${reason}`)
+      setTransportStatus(
+        transportMode === 'bluetooth'
+          ? `Could not connect Bluetooth board: ${reason}`
+          : `Could not connect serial board: ${reason}`,
+      )
     }
   }
 
   const disconnectBoard = async () => {
-    await serialTransport.disconnect()
+    if (transportMode === 'serial') {
+      await serialTransport.disconnect()
+    } else {
+      await bluetoothTransport.disconnect()
+    }
     setConnected(false)
-    setTransportStatus('Serial LoRa board disconnected.')
+    setTransportStatus(
+      transportMode === 'bluetooth' ? 'Bluetooth LoRa board disconnected.' : 'Serial LoRa board disconnected.',
+    )
   }
 
   const installApp = async () => {
@@ -270,14 +314,15 @@ function LiveAppPage() {
           id="transport-mode"
           value={transportMode}
           onChange={(event) => {
-            const nextMode = event.target.value as 'loopback' | 'serial'
+            const nextMode = event.target.value as 'loopback' | 'serial' | 'bluetooth'
             setTransportMode(nextMode)
           }}
         >
           <option value="loopback">Demo Loopback (no hardware)</option>
           <option value="serial">Serial LoRa Board</option>
+          <option value="bluetooth">Bluetooth LoRa Board</option>
         </select>
-        {transportMode === 'serial' ? (
+        {transportMode !== 'loopback' ? (
           <div className="transport-controls">
             <button type="button" onClick={() => void connectBoard()} disabled={connected}>
               Connect LoRa Board
