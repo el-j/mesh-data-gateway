@@ -37,7 +37,7 @@ mesh-data-gateway/
 
 ## Technology Stack
 
-- **Web Client:** Vite + TypeScript, Web Bluetooth/Web Serial APIs, PWA support, SMAZ-style compression.
+- **Web Client:** Vite + TypeScript + Tailwind CSS v4, Web Bluetooth/Web Serial APIs, PWA support, SMAZ-style compression.
 - **Mac Gateway:** Python 3.11+, `meshtastic`, `pysmaz`, MCP-compatible forwarding, and webhook integrations.
 - **Hardware:** 2x Heltec v4 LoRa nodes (mobile + Mac gateway side).
 
@@ -125,15 +125,19 @@ The web client now serves as a polished landing page and live MDG console in one
 - Includes route-based sections:
   - `/` Open-source hero landing page
   - `/app` Live MDG console
+  - `/docs` Comprehensive monorepo + usage documentation in-app
   - `/about` Project background
   - `/impressum` Legal/project transparency info
 - Choose transport mode in the console:
   - **Demo Loopback**: local test mode with no hardware.
   - **Serial LoRa Board**: click **Connect LoRa Board** to pick a serial device in a Chromium-based desktop browser.
+  - **Bluetooth LoRa Board**: click **Connect LoRa Board** to pair over Web Bluetooth (works well on Android Chrome).
 
 ### Hardware Connection Notes
 
-- Current browser hardware mode expects an MDG serial framing bridge (length-prefixed packet stream) on the selected serial port.
+- Current browser hardware modes expect an MDG length-prefixed packet framing bridge:
+  - Serial mode: framing over Web Serial.
+  - Bluetooth mode: framing over Nordic UART Service (NUS) Web Bluetooth characteristics.
 - Direct stock Meshtastic protobuf transport is not implemented yet; tracked in `apps/web-client/CONNECTIVITY_TODO.md`.
 
 ## CI/CD Workflows
