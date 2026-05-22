@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - copilot/**
+
+jobs:
+  web-client:
+    name: Web Client Tests & Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-client
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: apps/web-client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test
+
+      - name: Build app
+        run: npm run build
+
+  mac-gateway:
+    name: Mac Gateway Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mac-gateway
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install test dependencies
+        run: python -m pip install pytest pytest-cov
+
+      - name: Run tests
+        run: python -m pytest -q

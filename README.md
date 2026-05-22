@@ -114,3 +114,26 @@ npm run build
 ```
 
 Both Python and web suites are configured and validated at **100% statements/branches/functions/lines coverage** for implemented modules.
+
+## Landing Page + Browser App
+
+The web client now serves as a polished landing page and live MDG console in one app:
+
+- Use directly in-browser (no install required).
+- Install as a PWA when the browser exposes install support.
+- Includes manifest, service worker, and app icons in `apps/web-client/public/`.
+
+## CI/CD Workflows
+
+Workflows are in `.github/workflows/`:
+
+- `ci.yml`: runs web tests/build and Python tests on PRs and pushes.
+- `deploy-pages.yml`: builds/tests the web client and deploys to GitHub Pages on pushes to `main`.
+
+### Enable GitHub Pages Deployment
+
+1. Go to repository **Settings → Pages**.
+2. Set **Source** to **GitHub Actions**.
+3. Merge `deploy-pages.yml` to `main`.
+4. The app will publish at:
+   - `https://<owner>.github.io/mesh-data-gateway/`
