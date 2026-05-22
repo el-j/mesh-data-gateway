@@ -37,7 +37,7 @@ mesh-data-gateway/
 
 ## Technology Stack
 
-- **Web Client:** Vite + TypeScript, Web Bluetooth/Web Serial APIs, PWA support, SMAZ-style compression.
+- **Web Client:** Vite + TypeScript + Tailwind CSS v4, Web Bluetooth/Web Serial APIs, PWA support, SMAZ-style compression.
 - **Mac Gateway:** Python 3.11+, `meshtastic`, `pysmaz`, MCP-compatible forwarding, and webhook integrations.
 - **Hardware:** 2x Heltec v4 LoRa nodes (mobile + Mac gateway side).
 
@@ -125,6 +125,7 @@ The web client now serves as a polished landing page and live MDG console in one
 - Includes route-based sections:
   - `/` Open-source hero landing page
   - `/app` Live MDG console
+  - `/docs` Comprehensive monorepo + usage documentation in-app
   - `/about` Project background
   - `/impressum` Legal/project transparency info
 - Choose transport mode in the console:

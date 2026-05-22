@@ -35,8 +35,11 @@ describe('App', () => {
     )
   })
 
-  it('navigates to about and impressum pages from top nav', async () => {
+  it('navigates to docs, about and impressum pages from top nav', async () => {
     renderAt('/')
+    fireEvent.click(screen.getByRole('link', { name: /docs/i }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: /mdg monorepo documentation/i })).toBeInTheDocument())
+
     fireEvent.click(screen.getByRole('link', { name: /about/i }))
     await waitFor(() => expect(screen.getByRole('heading', { name: /about mesh data gateway/i })).toBeInTheDocument())
 
@@ -44,9 +47,14 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByRole('heading', { name: /impressum/i })).toBeInTheDocument())
   })
 
-  it('supports direct app and about routes', () => {
+  it('supports direct app, docs and about routes', () => {
     renderAt('/app')
     expect(screen.getByRole('heading', { name: /live mesh console/i })).toBeInTheDocument()
+    cleanup()
+
+    renderAt('/docs')
+    expect(screen.getByRole('heading', { name: /mdg monorepo documentation/i })).toBeInTheDocument()
+    expect(screen.getByText(/development \+ validation commands/i)).toBeInTheDocument()
     cleanup()
 
     renderAt('/about')
